@@ -11,6 +11,8 @@
 
 #include "hpdl1414sr.h"
 
+int HPDL1414SR::dpos = 0;
+
 HPDL1414SR::HPDL1414SR(uint8_t si, uint8_t sck, uint8_t lck)
 {
     si_pin = si;
@@ -23,7 +25,7 @@ HPDL1414SR::HPDL1414SR(uint8_t si, uint8_t sck, uint8_t lck)
 }
 
 // pos: digit position, left to right
-int HPDL1414SR::set_char(byte pos, byte c)
+int HPDL1414SR::set_char(uint8_t pos, uint8_t c)
 {
     byte shift1, shift2;
     if(c<0x20 || c>0x5f || pos>7 || pos<0) {
@@ -76,4 +78,54 @@ void HPDL1414SR::clear(void)
     for(byte i = 0; i<8; i++){
         set_char(i, 0x20);
     }
+}
+
+void HPDL1414SR::scr_init(void)
+{
+  HPDL1414SR::dpos = -8;
+}
+
+int HPDL1414SR::scr_disp(const char* str)
+{
+  char tmp_str[MAX_CHAR + 1];
+  char tmp_c;
+  int idx;
+  uint8_t set_null = 0;
+  uint8_t turn_over = 0;
+
+  for(int8_t i = 0; i<MAX_CHAR; i++) {
+    idx = HPDL1414SR::dpos + i;
+    if(idx<0) {
+      tmp_str[i] = 0x20;
+    } else if(set_null) {
+      tmp_str[i] = 0x20;
+    } else {
+
+      tmp_c = *(str + idx);
+
+      // Last position of the string
+      if(tmp_c=='\0') {
+        tmp_str[i] = 0x20;
+        set_null = 1;
+        // Scroll out timing
+        if(i==1) {
+          turn_over = 1;
+        }
+      } else {
+        tmp_str[i] = tmp_c;
+      }
+    }
+  }
+  tmp_str[MAX_CHAR] = '\0';
+
+  // Last position of the string or not
+  if(turn_over) {
+    HPDL1414SR::dpos = -8;
+  } else {
+    HPDL1414SR::dpos++;
+  }
+  
+  disp_str(tmp_str);
+
+  return (int)turn_over;
 }

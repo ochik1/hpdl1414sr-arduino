@@ -8,13 +8,16 @@ class HPDL1414SR
 {
 public:
     HPDL1414SR(uint8_t si, uint8_t sck, uint8_t lck);
-    int set_char(byte pos, byte c);
+    int set_char(uint8_t pos, uint8_t c);
     int disp_str(const char str[]);
+    void scr_init(void);
+    int scr_disp(const char* str);
     void clear(void);
 private:
     uint8_t si_pin;
     uint8_t sck_pin;
     uint8_t lck_pin;
+    static int dpos;
 };
 
 #endif
